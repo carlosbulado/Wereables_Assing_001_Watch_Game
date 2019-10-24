@@ -8,9 +8,11 @@
 
 import SpriteKit
 import GameplayKit
+import WatchConnectivity
 
 class GameScene: SKScene
 {
+    var session : WCSession!
     
     let cat = SKSpriteNode(imageNamed: "character1")
     let sushiBase = SKSpriteNode(imageNamed:"roll")
@@ -25,6 +27,8 @@ class GameScene: SKScene
     
     var catMove : Bool = false
     var lose : Bool = false
+    
+    var numLoops : Int = 0
     
     
     func spawnSushi()
@@ -49,7 +53,6 @@ class GameScene: SKScene
         self.sushiTower.append(sushi)
         
         let stickPosition = Int.random(in: 1...2)
-        print("Random number: \(stickPosition)")
         if (stickPosition == 1) {
             // save the current position of the chopstick
             self.chopstickPositions.append("right")
@@ -99,6 +102,8 @@ class GameScene: SKScene
         addChild(sushiBase)
         
         self.buildTower()
+        
+        self.initWCSessionDelegate()
     }
     
     func buildTower() {
@@ -110,11 +115,15 @@ class GameScene: SKScene
     
     override func update(_ currentTime: TimeInterval)
     {
+        self.numLoops = self.numLoops + 1
+
         if self.catMove
         {
             self.spawnSushi()
             self.catMove = false
         }
+        
+        self.sendCurrentTime(currentTime)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?)
@@ -146,27 +155,55 @@ class GameScene: SKScene
         }
         
         let middleOfScreen  = self.size.width / 2
-        if (mousePosition.x < middleOfScreen)
+        
+        if mousePosition.x < middleOfScreen { self.moveLeft() }
+        else { self.moveRight() }
+    }
+    
+    func moveLeft()
+    {
+        cat.position = CGPoint(x: self.size.width * 0.25, y: 100)
+        
+        let facingRight = SKAction.scaleX(to: 1, duration: 0)
+        self.cat.run(facingRight)
+        
+        self.catPosition = "left"
+        self.catMove = true
+        
+        if self.session.isReachable
         {
-            cat.position = CGPoint(x:self.size.width*0.25, y:100)
-            
-            let facingRight = SKAction.scaleX(to: 1, duration: 0)
-            self.cat.run(facingRight)
-            
-            self.catPosition = "left"
-            self.catMove = true
+            let message = ["CatMovement" : "LEFT"] as [String : Any]
+            self.session.sendMessage(message, replyHandler: nil)
+            print("CatMovement LEFT sent.")
         }
-        else
+        else { print("No message was sent.") }
+        
+        self.finishMovement()
+    }
+    
+    func moveRight()
+    {
+        cat.position = CGPoint(x: self.size.width * 0.75, y: 100)
+        
+        let facingLeft = SKAction.scaleX(to: -1, duration: 0)
+        self.cat.run(facingLeft)
+        
+        self.catPosition = "right"
+        self.catMove = true
+        
+        if self.session.isReachable
         {
-            cat.position = CGPoint(x:self.size.width*0.85, y:100)
-            
-            let facingLeft = SKAction.scaleX(to: -1, duration: 0)
-            self.cat.run(facingLeft)
-            
-            self.catPosition = "right"
-            self.catMove = true
+            let message = ["CatMovement" : "RIGHT"] as [String : Any]
+            self.session.sendMessage(message, replyHandler: nil)
+            print("CatMovement RIGHT sent.")
         }
-
+        else { print("No message was sent.") }
+        
+        self.finishMovement()
+    }
+    
+    func finishMovement()
+    {
         let image1 = SKTexture(imageNamed: "character1")
         let image2 = SKTexture(imageNamed: "character2")
         let image3 = SKTexture(imageNamed: "character3")
@@ -195,5 +232,48 @@ class GameScene: SKScene
         {
             // YOU LOST
         }
+    }
+}
+
+
+// Extension for implement WCSessionDelegate
+extension GameScene : WCSessionDelegate
+{
+    func initWCSessionDelegate()
+    {
+        if WCSession.isSupported()
+        {
+            print("WC is supported!")
+            self.session = WCSession.default
+            self.session.delegate = self
+            self.session.activate()
+        }
+        else { print("WC NOT supported!") }
+    }
+    
+    func session(_ session: WCSession, didReceiveMessage message: [String : Any])
+    {
+        print("PHONE: I received a message: \(message)")
+        let direction = message["Direction"] as! String
+        
+        if direction == "Left" { self.moveLeft() }
+        if direction == "Right" { self.moveRight() }
+    }
+    
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) { print("GameScene - session") }
+    
+    func sessionDidBecomeInactive(_ session: WCSession) { print("GameScene - sessionDidBecomeInactive") }
+    
+    func sessionDidDeactivate(_ session: WCSession) { print("GameScene - sessionDidDeactivate") }
+    
+    func sendCurrentTime(_ currentTime: TimeInterval)
+    {
+//        if self.session.isReachable
+//        {
+//            let message = ["CurrentGameTime" : self.numLoops] as [String : Any]
+//            self.session.sendMessage(message, replyHandler: nil)
+//            //print("Message sent.")
+//        }
+//        else { print("No message was sent.") }
     }
 }
