@@ -29,7 +29,8 @@ class GameScene: SKScene
     var lose : Bool = false
     
     var numLoops : Int = 0
-    
+    var seconds : Int = 0
+    var lastCurrentTime : Int = 0
     
     func spawnSushi()
     {
@@ -268,12 +269,19 @@ extension GameScene : WCSessionDelegate
     
     func sendCurrentTime(_ currentTime: TimeInterval)
     {
-//        if self.session.isReachable
-//        {
-//            let message = ["CurrentGameTime" : self.numLoops] as [String : Any]
-//            self.session.sendMessage(message, replyHandler: nil)
-//            //print("Message sent.")
-//        }
-//        else { print("No message was sent.") }
+        if self.session.isReachable
+        {
+            let now : Int = Int(currentTime)
+            if now > self.lastCurrentTime
+            {
+                self.seconds = self.seconds + 1
+                //let message = ["CurrentGameTime" : self.numLoops] as [String : Any]
+                self.session.sendMessage(["CurrentGameTime" : self.seconds], replyHandler: nil)
+                //print("Message sent.")
+            }
+        }
+        else { print("No message was sent.") }
+
+        self.lastCurrentTime = Int(currentTime)
     }
 }

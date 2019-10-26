@@ -23,6 +23,7 @@ class InterfaceController : WKInterfaceController
         super.awake(withContext: context)
         
         // Configure interface objects here.
+        initWCSessionDelegate()
     }
     
     override func willActivate()
@@ -43,8 +44,8 @@ class InterfaceController : WKInterfaceController
     {
         if self.session.isReachable
         {
-            let message = ["Direction" : "Left"] as [String : Any]
-            self.session.sendMessage(message, replyHandler: nil)
+//            let message = ["Direction" : "Left"] as [String : Any]
+            self.session.sendMessage(["Direction" : "Left"], replyHandler: nil)
             print("Message sent.")
         }
         else { print("No message was sent.") }
@@ -54,8 +55,8 @@ class InterfaceController : WKInterfaceController
     {
         if self.session.isReachable
         {
-            let message = ["Direction" : "Right"] as [String : Any]
-            self.session.sendMessage(message, replyHandler: nil)
+//            let message = ["Direction" : "Right"] as [String : Any]
+            self.session.sendMessage(["Direction" : "Right"], replyHandler: nil)
             print("Message sent.")
         }
         else { print("No message was sent.") }
@@ -73,14 +74,20 @@ extension InterfaceController : WCSessionDelegate
             self.session = WCSession.default
             self.session.delegate = self
             self.session.activate()
-            self.session.activate()
+            
+            self.session.sendMessage(["Direction" : "Right"], replyHandler: { (dict) -> Void in
+                print("InterfaceController session response: \(dict)")
+                }, errorHandler: { (error) -> Void in
+                    print("InterfaceController session error: \(error)")
+            })
+            
         }
         else { print("WC NOT supported!") }
     }
     
     func session(_ session: WCSession, didReceiveMessage message: [String : Any])
     {
-        print("WATCH: I received a message: \(message)")
+        //print("WATCH: I received a message: \(message)")
         
         if message["CurrentGameTime"] != nil
         {
@@ -96,23 +103,5 @@ extension InterfaceController : WCSessionDelegate
     }
     
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) { print("InterfaceController - session") }
-    
-    func stringFromTimeInterval (interval: String) -> String {
-        let endingDate = Date()
-        if let timeInterval = TimeInterval(interval) {
-            let startingDate = endingDate.addingTimeInterval(-timeInterval)
-            let calendar = Calendar.current
-
-            let componentsNow = calendar.dateComponents([.hour, .minute, .second], from: startingDate, to: endingDate)
-            if let hour = componentsNow.hour, let minute = componentsNow.minute, let seconds = componentsNow.second {
-                return "\(hour):\(minute):\(seconds)"
-            } else {
-                return "00:00:00"
-            }
-
-        } else {
-            return "00:00:00"
-        }
-    }
 }
 
