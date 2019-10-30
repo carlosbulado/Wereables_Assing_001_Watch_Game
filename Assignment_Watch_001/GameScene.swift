@@ -17,20 +17,23 @@ class GameScene: SKScene
     let cat = SKSpriteNode(imageNamed: "character1")
     let sushiBase = SKSpriteNode(imageNamed:"roll")
 
-    var sushiTower:[SKSpriteNode] = []
-    let SUSHI_PIECE_GAP:CGFloat = 80
+    var sushiTower : [SKSpriteNode] = []
+    let SUSHI_PIECE_GAP : CGFloat = 80
 
-    var chopstickGraphicsArray:[SKSpriteNode] = []
+    var chopstickGraphicsArray : [SKSpriteNode] = []
     
-    var catPosition = "left"
-    var chopstickPositions:[String] = []
+    var catPosition : String = "left"
+    var chopstickPositions : [String] = []
     
     var catMove : Bool = false
     var lose : Bool = false
     
     var numLoops : Int = 0
-    var seconds : Int = 0
+    var seconds : Int = 25
     var lastCurrentTime : Int = 0
+    var catHitsBranch : Bool = false
+    
+    var points : Int = 0
     
     func spawnSushi()
     {
@@ -107,8 +110,10 @@ class GameScene: SKScene
         self.initWCSessionDelegate()
     }
     
-    func buildTower() {
-        for _ in 0...8 {
+    func buildTower()
+    {
+        for _ in 0...8
+        {
             self.spawnSushi()
         }
     }
@@ -116,12 +121,26 @@ class GameScene: SKScene
     
     override func update(_ currentTime: TimeInterval)
     {
+        if self.seconds <= 0
+        {
+            // YOU LOST
+            self.youLost()
+        }
+        
         self.numLoops = self.numLoops + 1
 
         if self.catMove
         {
             self.spawnSushi()
             self.catMove = false
+        }
+        
+        if self.sushiTower.count < 10
+        {
+            for _ in self.sushiTower.count...10
+            {
+                self.spawnSushi()
+            }
         }
         
         self.sendCurrentTime(currentTime)
@@ -163,44 +182,48 @@ class GameScene: SKScene
     
     func moveLeft()
     {
-        cat.position = CGPoint(x: self.size.width * 0.25, y: 100)
-        
-        let facingRight = SKAction.scaleX(to: 1, duration: 0)
-        self.cat.run(facingRight)
-        
-        self.catPosition = "left"
-        self.catMove = true
-        
-        if self.session.isReachable
+        if !self.lose
         {
-            let message = ["CatMovement" : "LEFT"] as [String : Any]
-            self.session.sendMessage(message, replyHandler: nil)
-            print("CatMovement LEFT sent.")
+            cat.position = CGPoint(x: self.size.width * 0.25, y: 100)
+            
+            let facingRight = SKAction.scaleX(to: 1, duration: 0)
+            self.cat.run(facingRight)
+            
+            self.catPosition = "left"
+            self.catMove = true
+            
+            if self.session.isReachable
+            {
+                let message = ["CatMovement" : "LEFT"] as [String : Any]
+                self.session.sendMessage(message, replyHandler: nil)
+            }
+            else { print("No message was sent.") }
+            
+            self.finishMovement()
         }
-        else { print("No message was sent.") }
-        
-        self.finishMovement()
     }
     
     func moveRight()
     {
-        cat.position = CGPoint(x: self.size.width * 0.75, y: 100)
-        
-        let facingLeft = SKAction.scaleX(to: -1, duration: 0)
-        self.cat.run(facingLeft)
-        
-        self.catPosition = "right"
-        self.catMove = true
-        
-        if self.session.isReachable
+        if !self.lose
         {
-            let message = ["CatMovement" : "RIGHT"] as [String : Any]
-            self.session.sendMessage(message, replyHandler: nil)
-            print("CatMovement RIGHT sent.")
+            cat.position = CGPoint(x: self.size.width * 0.75, y: 100)
+            
+            let facingLeft = SKAction.scaleX(to: -1, duration: 0)
+            self.cat.run(facingLeft)
+            
+            self.catPosition = "right"
+            self.catMove = true
+            
+            if self.session.isReachable
+            {
+                let message = ["CatMovement" : "RIGHT"] as [String : Any]
+                self.session.sendMessage(message, replyHandler: nil)
+            }
+            else { print("No message was sent.") }
+            
+            self.finishMovement()
         }
-        else { print("No message was sent.") }
-        
-        self.finishMovement()
     }
     
     func finishMovement()
@@ -218,24 +241,59 @@ class GameScene: SKScene
         self.cat.run(punchAnimation)
         
         let firstChopstick = self.chopstickPositions[0]
-        if (catPosition == "left" && firstChopstick == "left") { self.lose = true }
-        else if (catPosition == "right" && firstChopstick == "right") { self.lose = true }
+        if (catPosition == "left" && firstChopstick == "left") { self.catHitsBranch = true }
+        else if (catPosition == "right" && firstChopstick == "right") { self.catHitsBranch = true }
         else if (catPosition == "left" && firstChopstick == "right")
         {
             // POINT
+            self.points = self.points + 1
+            self.seconds = self.seconds + 1
+            self.sendPoints()
         }
         else if (catPosition == "right" && firstChopstick == "left")
         {
             // POINT
+            self.points = self.points + 1
+            self.seconds = self.seconds + 1
+            self.sendPoints()
         }
 
-        if self.lose
+        if self.catHitsBranch
         {
-            // YOU LOST
+            // HIT BRANCH
+            self.seconds = self.seconds - 5
+            self.points = self.points - 4
+            if self.points < 0
+            {
+                self.points = 0
+            }
+            self.sendPoints()
         }
+        
+        self.catHitsBranch = false
+    }
+    
+    func initGame()
+    {
+        self.seconds = 25
+        self.numLoops = 0
+        self.points = 0
+        self.catMove = false
+        self.lose = false
+    }
+    
+    func youLost()
+    {
+        if self.session.isReachable
+        {
+            let message = ["GameStatus" : "GAME OVER!"] as [String : Any]
+            self.session.sendMessage(message, replyHandler: nil)
+        }
+        else { print("No message was sent.") }
+        
+        self.lose = true
     }
 }
-
 
 // Extension for implement WCSessionDelegate
 extension GameScene : WCSessionDelegate
@@ -274,14 +332,22 @@ extension GameScene : WCSessionDelegate
             let now : Int = Int(currentTime)
             if now > self.lastCurrentTime
             {
-                self.seconds = self.seconds + 1
-                //let message = ["CurrentGameTime" : self.numLoops] as [String : Any]
+                self.seconds = self.seconds - 1
                 self.session.sendMessage(["CurrentGameTime" : self.seconds], replyHandler: nil)
-                //print("Message sent.")
             }
         }
         else { print("No message was sent.") }
 
         self.lastCurrentTime = Int(currentTime)
+    }
+    
+    func sendPoints()
+    {
+        if self.session.isReachable
+        {
+            self.session.sendMessage(["Points" : self.points], replyHandler: nil)
+            print("Message with points: \(self.points)")
+        }
+        else { print("No message was sent.") }
     }
 }

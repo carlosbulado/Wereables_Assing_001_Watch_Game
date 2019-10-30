@@ -15,7 +15,7 @@ class InterfaceController : WKInterfaceController
     var session : WCSession!
     
     @IBOutlet weak var currentGameTime: WKInterfaceLabel!
-
+    @IBOutlet weak var points: WKInterfaceLabel!
     @IBOutlet weak var catMovement: WKInterfaceLabel!
 
     override func awake(withContext context: Any?)
@@ -44,7 +44,6 @@ class InterfaceController : WKInterfaceController
     {
         if self.session.isReachable
         {
-//            let message = ["Direction" : "Left"] as [String : Any]
             self.session.sendMessage(["Direction" : "Left"], replyHandler: nil)
             print("Message sent.")
         }
@@ -55,7 +54,6 @@ class InterfaceController : WKInterfaceController
     {
         if self.session.isReachable
         {
-//            let message = ["Direction" : "Right"] as [String : Any]
             self.session.sendMessage(["Direction" : "Right"], replyHandler: nil)
             print("Message sent.")
         }
@@ -87,7 +85,7 @@ extension InterfaceController : WCSessionDelegate
     
     func session(_ session: WCSession, didReceiveMessage message: [String : Any])
     {
-        //print("WATCH: I received a message: \(message)")
+        print("WATCH: I received a message: \(message)")
         
         if message["CurrentGameTime"] != nil
         {
@@ -99,6 +97,18 @@ extension InterfaceController : WCSessionDelegate
         {
             let catMovement = message["CatMovement"] as! String
             self.catMovement.setText("Cat: \(catMovement)")
+        }
+        
+        if message["Points"] != nil
+        {
+            let points = message["Points"] as! NSNumber
+            self.points.setText("Points: \(points)")
+        }
+        
+        if message["GameStatus"] != nil
+        {
+            let status = message["GameStatus"] as! String
+            self.catMovement.setText("\(status)")
         }
     }
     
