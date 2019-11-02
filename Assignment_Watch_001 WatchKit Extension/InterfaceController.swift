@@ -13,7 +13,10 @@ import WatchConnectivity
 class InterfaceController : WKInterfaceController
 {
     var session : WCSession!
+    var isGameRunning : Bool = false
+    var startRestartPauseGameBtnState : Int = 0
     
+    @IBOutlet weak var startGameBtn: WKInterfaceButton!
     @IBOutlet weak var currentGameTime: WKInterfaceLabel!
     @IBOutlet weak var points: WKInterfaceLabel!
     @IBOutlet weak var catMovement: WKInterfaceLabel!
@@ -59,6 +62,57 @@ class InterfaceController : WKInterfaceController
         }
         else { print("No message was sent.") }
     }
+    
+    @IBAction func startGameTapped()
+    {
+        print("\(self.startRestartPauseGameBtnState)")
+        if self.session.isReachable
+        {
+            if self.startRestartPauseGameBtnState == 0
+            {
+                self.session.sendMessage(["StartGame" : true], replyHandler: nil)
+                print("Message sent.")
+                
+                self.stateBtn1()
+            }
+            else if self.startRestartPauseGameBtnState == 1
+            {
+                self.session.sendMessage(["PauseGame" : true], replyHandler: nil)
+                print("Message sent.")
+                
+                self.stateBtn2()
+            }
+            else if self.startRestartPauseGameBtnState == 2
+            {
+                self.session.sendMessage(["ResumeGame" : true], replyHandler: nil)
+                print("Message sent.")
+                
+                self.stateBtn1()
+            }
+        }
+        else { print("No message was sent.") }
+    }
+    
+    func stateBtn0()
+    {
+        self.isGameRunning = false
+        self.startRestartPauseGameBtnState = 0
+        self.startGameBtn.setTitle("Start Game")
+    }
+    
+    func stateBtn1()
+    {
+        self.isGameRunning = true
+        self.startRestartPauseGameBtnState = 1
+        self.startGameBtn.setTitle("Pause Game")
+    }
+    
+    func stateBtn2()
+    {
+        self.isGameRunning = false
+        self.startRestartPauseGameBtnState = 2
+        self.startGameBtn.setTitle("Resume Game")
+    }
 }
 
 // Extension for implement WCSessionDelegate
@@ -85,18 +139,26 @@ extension InterfaceController : WCSessionDelegate
     
     func session(_ session: WCSession, didReceiveMessage message: [String : Any])
     {
-        print("WATCH: I received a message: \(message)")
+        //print("WATCH: I received a message: \(message)")
         
         if message["CurrentGameTime"] != nil
         {
             let numLoops = message["CurrentGameTime"] as! NSNumber
             self.currentGameTime.setText("Time:  \(numLoops)")
-        }
-        
-        if message["CatMovement"] != nil
-        {
-            let catMovement = message["CatMovement"] as! String
-            self.catMovement.setText("Cat: \(catMovement)")
+            if Int(truncating: numLoops) == 15
+            {
+                self.catMovement.setText("\(numLoops) seconds")
+            }
+            
+            if Int(truncating: numLoops) == 10
+            {
+                self.catMovement.setText("\(numLoops) seconds remaining")
+            }
+            
+            if Int(truncating: numLoops) == 5
+            {
+                self.catMovement.setText("\(numLoops) seconds remaining")
+            }
         }
         
         if message["Points"] != nil
@@ -109,6 +171,11 @@ extension InterfaceController : WCSessionDelegate
         {
             let status = message["GameStatus"] as! String
             self.catMovement.setText("\(status)")
+            
+            if status == "GAME OVER!"
+            {
+                self.stateBtn0()
+            }
         }
     }
     

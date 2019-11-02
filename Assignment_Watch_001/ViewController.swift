@@ -51,40 +51,7 @@ class ViewController : UIViewController
         skView.showsPhysics = true
         
         skView.presentScene(scene)
-        
-//        self.initWCSessionDelegate()
     }
 
   
 }
-
-// Extension for implement WCSessionDelegate
-//extension ViewController : WCSessionDelegate
-//{
-//    func initWCSessionDelegate()
-//    {
-//        if WCSession.isSupported()
-//        {
-//            print("WC is supported!")
-//            let session = WCSession.default
-//            session.delegate = self
-//            session.activate()
-//        }
-//        else { print("WC NOT supported!") }
-//    }
-//
-//    func session(_ session: WCSession, didReceiveMessage message: [String : Any])
-//    {
-//        print("PHONE: I received a message: \(message)")
-//        let direction = message["Direction"] as! String
-//
-//        if direction == "Left" { self.scene.moveLeft() }
-//        if direction == "Right" { self.scene.moveRight() }
-//    }
-//
-//    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) { print("GameViewController - session") }
-//
-//    func sessionDidBecomeInactive(_ session: WCSession) { print("GameViewController - sessionDidBecomeInactive") }
-//
-//    func sessionDidDeactivate(_ session: WCSession) { print("GameViewController - sessionDidDeactivate") }
-//}

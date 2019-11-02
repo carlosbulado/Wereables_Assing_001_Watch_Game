@@ -13,6 +13,7 @@
                     <items>
                         <label width="1" height="40" alignment="left" textAlignment="center" id="tm6-2Z-BAL"/>
                         <label width="1" height="40" alignment="left" textAlignment="center" id="518-af-KGj"/>
+                        <label width="1" alignment="left" textAlignment="center" id="fVg-fN-0Lm"/>
                         <group width="0.0" alignment="center" id="MFT-NE-1bF">
                             <items>
                                 <button width="65" alignment="left" title="Left" id="Gbc-7F-5tH">
@@ -27,12 +28,17 @@
                                 </button>
                             </items>
                         </group>
-                        <label width="1" alignment="left" textAlignment="center" id="fVg-fN-0Lm"/>
+                        <button width="1" alignment="left" title="Start Game" id="tp9-bC-xQ4">
+                            <connections>
+                                <action selector="startGameTapped" destination="AgC-eL-Hgc" id="dc6-zF-qee"/>
+                            </connections>
+                        </button>
                     </items>
                     <connections>
                         <outlet property="catMovement" destination="fVg-fN-0Lm" id="aWA-6y-rJL"/>
                         <outlet property="currentGameTime" destination="tm6-2Z-BAL" id="mMt-xJ-bwW"/>
                         <outlet property="points" destination="518-af-KGj" id="nwV-ee-E5B"/>
+                        <outlet property="startGameBtn" destination="tp9-bC-xQ4" id="CgG-Xu-uTu"/>
                     </connections>
                 </controller>
             </objects>

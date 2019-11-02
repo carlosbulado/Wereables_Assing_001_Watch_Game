@@ -13,6 +13,7 @@ import WatchConnectivity
 class GameScene: SKScene
 {
     var session : WCSession!
+    var isGameRunning : Bool = false
     
     let cat = SKSpriteNode(imageNamed: "character1")
     let sushiBase = SKSpriteNode(imageNamed:"roll")
@@ -121,63 +122,69 @@ class GameScene: SKScene
     
     override func update(_ currentTime: TimeInterval)
     {
-        if self.seconds <= 0
+        if self.isGameRunning
         {
-            // YOU LOST
-            self.youLost()
-        }
-        
-        self.numLoops = self.numLoops + 1
+            if self.seconds <= 0
+            {
+                // YOU LOST
+                self.youLost()
+            }
+            
+            self.numLoops = self.numLoops + 1
 
-        if self.catMove
-        {
-            self.spawnSushi()
-            self.catMove = false
-        }
-        
-        if self.sushiTower.count < 10
-        {
-            for _ in self.sushiTower.count...10
+            if self.catMove
             {
                 self.spawnSushi()
+                self.catMove = false
             }
+            
+            if self.sushiTower.count < 10
+            {
+                for _ in self.sushiTower.count...10
+                {
+                    self.spawnSushi()
+                }
+            }
+
+            self.sendCurrentTime(currentTime)
         }
-        
-        self.sendCurrentTime(currentTime)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?)
     {
-        guard let mousePosition = touches.first?.location(in: self) else {
-            return
-        }
-
-        let pieceToRemove = self.sushiTower.first
-        let stickToRemove = self.chopstickGraphicsArray.first
-        
-        if (pieceToRemove != nil && stickToRemove != nil)
+        if self.isGameRunning
         {
-            pieceToRemove!.removeFromParent()
-            self.sushiTower.remove(at: 0)
-        
-            stickToRemove!.removeFromParent()
-            self.chopstickGraphicsArray.remove(at:0)
+            guard let mousePosition = touches.first?.location(in: self) else {
+                return
+            }
+
+            let pieceToRemove = self.sushiTower.first
+            let stickToRemove = self.chopstickGraphicsArray.first
             
-            self.chopstickPositions.remove(at:0)
+            if (pieceToRemove != nil && stickToRemove != nil)
+            {
+                pieceToRemove!.removeFromParent()
+                self.sushiTower.remove(at: 0)
             
-            for piece in sushiTower {
-                piece.position.y = piece.position.y - SUSHI_PIECE_GAP
+                stickToRemove!.removeFromParent()
+                self.chopstickGraphicsArray.remove(at:0)
+                
+                self.chopstickPositions.remove(at:0)
+                
+                for piece in sushiTower {
+                    piece.position.y = piece.position.y - SUSHI_PIECE_GAP
+                }
+                
+                for stick in chopstickGraphicsArray {
+                    stick.position.y = stick.position.y - SUSHI_PIECE_GAP
+                }
             }
             
-            for stick in chopstickGraphicsArray {
-                stick.position.y = stick.position.y - SUSHI_PIECE_GAP
-            }
+            let middleOfScreen  = self.size.width / 2
+            
+            if mousePosition.x < middleOfScreen { self.moveLeft() }
+            else { self.moveRight() }
         }
-        
-        let middleOfScreen  = self.size.width / 2
-        
-        if mousePosition.x < middleOfScreen { self.moveLeft() }
-        else { self.moveRight() }
     }
     
     func moveLeft()
@@ -247,22 +254,22 @@ class GameScene: SKScene
         {
             // POINT
             self.points = self.points + 1
-            self.seconds = self.seconds + 1
+            //self.seconds = self.seconds + 1
             self.sendPoints()
         }
         else if (catPosition == "right" && firstChopstick == "left")
         {
             // POINT
             self.points = self.points + 1
-            self.seconds = self.seconds + 1
+            //self.seconds = self.seconds + 1
             self.sendPoints()
         }
 
         if self.catHitsBranch
         {
             // HIT BRANCH
-            self.seconds = self.seconds - 5
-            self.points = self.points - 4
+            //self.seconds = self.seconds - 5
+            //self.points = self.points - 4
             if self.points < 0
             {
                 self.points = 0
@@ -292,6 +299,19 @@ class GameScene: SKScene
         else { print("No message was sent.") }
         
         self.lose = true
+        self.isGameRunning = false
+    }
+    
+    func startRestartGame()
+    {
+        self.catMove = false
+        self.lose = false
+        self.numLoops = 0
+        self.seconds = 25
+        self.lastCurrentTime = 0
+        self.catHitsBranch = false
+        self.points = 0
+        self.isGameRunning = true
     }
 }
 
@@ -313,10 +333,41 @@ extension GameScene : WCSessionDelegate
     func session(_ session: WCSession, didReceiveMessage message: [String : Any])
     {
         print("PHONE: I received a message: \(message)")
-        let direction = message["Direction"] as! String
         
-        if direction == "Left" { self.moveLeft() }
-        if direction == "Right" { self.moveRight() }
+        if let directionValue = message["Direction"]
+        {
+            let direction = directionValue as? String
+            
+            if direction == "Left" { self.moveLeft() }
+            if direction == "Right" { self.moveRight() }
+        }
+
+        if let startGameValue = message["StartGame"]
+        {
+            let isGameStart = startGameValue as! Bool
+            if isGameStart
+            {
+                self.startRestartGame()
+            }
+        }
+
+        if let resumeGameValue = message["ResumeGame"]
+        {
+            let isGameStart = resumeGameValue as! Bool
+            if isGameStart
+            {
+                self.isGameRunning = true
+            }
+        }
+
+        if let pauseGameValue = message["PauseGame"]
+        {
+            let isGameStart = pauseGameValue as! Bool
+            if isGameStart
+            {
+                self.isGameRunning = false
+            }
+        }
     }
     
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) { print("GameScene - session") }
