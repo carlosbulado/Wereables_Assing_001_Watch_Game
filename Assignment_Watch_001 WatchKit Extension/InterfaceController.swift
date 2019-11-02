@@ -15,7 +15,10 @@ class InterfaceController : WKInterfaceController
     var session : WCSession!
     var isGameRunning : Bool = false
     var startRestartPauseGameBtnState : Int = 0
+    var seconds : Int = 0
+    var powerUpPlusTimeSecond : Int = 0
     
+    @IBOutlet weak var powerUpPlusTimeBtn: WKInterfaceButton!
     @IBOutlet weak var startGameBtn: WKInterfaceButton!
     @IBOutlet weak var currentGameTime: WKInterfaceLabel!
     @IBOutlet weak var points: WKInterfaceLabel!
@@ -113,6 +116,19 @@ class InterfaceController : WKInterfaceController
         self.startRestartPauseGameBtnState = 2
         self.startGameBtn.setTitle("Resume Game")
     }
+    
+    @IBAction func powerUpPlusTapped()
+    {
+        if self.session.isReachable
+        {
+            self.session.sendMessage(["PowerUp" : "+Time"], replyHandler: nil)
+            print("Message sent.")
+        }
+        else { print("No message was sent.") }
+
+        self.powerUpPlusTimeBtn.setHidden(true)
+        self.powerUpPlusTimeSecond = 0
+    }
 }
 
 // Extension for implement WCSessionDelegate
@@ -145,19 +161,27 @@ extension InterfaceController : WCSessionDelegate
         {
             let numLoops = message["CurrentGameTime"] as! NSNumber
             self.currentGameTime.setText("Time:  \(numLoops)")
-            if Int(truncating: numLoops) == 15
+            self.seconds = Int(truncating: numLoops)
+
+            if self.seconds == 15
             {
                 self.catMovement.setText("\(numLoops) seconds")
             }
             
-            if Int(truncating: numLoops) == 10
+            if self.seconds == 10
             {
                 self.catMovement.setText("\(numLoops) seconds remaining")
             }
             
-            if Int(truncating: numLoops) == 5
+            if self.seconds == 5
             {
                 self.catMovement.setText("\(numLoops) seconds remaining")
+            }
+            
+            if self.powerUpPlusTimeSecond > 0 && self.powerUpPlusTimeSecond - 2 == self.seconds
+            {
+                self.powerUpPlusTimeBtn.setHidden(true)
+                self.powerUpPlusTimeSecond = 0
             }
         }
         
@@ -175,6 +199,16 @@ extension InterfaceController : WCSessionDelegate
             if status == "GAME OVER!"
             {
                 self.stateBtn0()
+            }
+        }
+        
+        if message["PowerUp"] != nil
+        {
+            let powerUp = message["PowerUp"] as! String
+            if powerUp == "+Time"
+            {
+                self.powerUpPlusTimeSecond = self.seconds
+                self.powerUpPlusTimeBtn.setHidden(false)
             }
         }
     }

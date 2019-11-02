@@ -33,6 +33,7 @@ class GameScene: SKScene
     var seconds : Int = 25
     var lastCurrentTime : Int = 0
     var catHitsBranch : Bool = false
+    var powerUpTimes : Int = 2
     
     var points : Int = 0
     
@@ -145,6 +146,8 @@ class GameScene: SKScene
                     self.spawnSushi()
                 }
             }
+            
+            if self.powerUpTimes > 0 { self.generatePowerUp() }
 
             self.sendCurrentTime(currentTime)
         }
@@ -279,16 +282,7 @@ class GameScene: SKScene
         
         self.catHitsBranch = false
     }
-    
-    func initGame()
-    {
-        self.seconds = 25
-        self.numLoops = 0
-        self.points = 0
-        self.catMove = false
-        self.lose = false
-    }
-    
+
     func youLost()
     {
         if self.session.isReachable
@@ -312,6 +306,24 @@ class GameScene: SKScene
         self.catHitsBranch = false
         self.points = 0
         self.isGameRunning = true
+        self.powerUpTimes = 2
+    }
+    
+    func generatePowerUp()
+    {
+        let randomNumber = Int.random(in: 0 ... 12)
+        
+        if randomNumber % 11 == 0
+        {
+            if self.session.isReachable
+            {
+                self.session.sendMessage(["PowerUp" : "+Time"], replyHandler: nil)
+                print("Message with points: \(self.points)")
+            }
+            else { print("No message was sent.") }
+            
+            self.powerUpTimes = self.powerUpTimes - 1
+        }
     }
 }
 
@@ -334,38 +346,47 @@ extension GameScene : WCSessionDelegate
     {
         print("PHONE: I received a message: \(message)")
         
-        if let directionValue = message["Direction"]
+        if message["Direction"] != nil
         {
-            let direction = directionValue as? String
+            let direction = message["Direction"] as! String
             
             if direction == "Left" { self.moveLeft() }
             if direction == "Right" { self.moveRight() }
         }
 
-        if let startGameValue = message["StartGame"]
+        if message["StartGame"] != nil
         {
-            let isGameStart = startGameValue as! Bool
+            let isGameStart = message["StartGame"] as! Bool
             if isGameStart
             {
                 self.startRestartGame()
             }
         }
 
-        if let resumeGameValue = message["ResumeGame"]
+        if message["ResumeGame"] != nil
         {
-            let isGameStart = resumeGameValue as! Bool
+            let isGameStart = message["ResumeGame"] as! Bool
             if isGameStart
             {
                 self.isGameRunning = true
             }
         }
 
-        if let pauseGameValue = message["PauseGame"]
+        if message["PauseGame"] != nil
         {
-            let isGameStart = pauseGameValue as! Bool
+            let isGameStart = message["PauseGame"] as! Bool
             if isGameStart
             {
                 self.isGameRunning = false
+            }
+        }
+        
+        if message["PowerUp"] != nil
+        {
+            let powerUpPlusTime = message["PowerUp"] as! String
+            if powerUpPlusTime == "+Time"
+            {
+                self.seconds = self.seconds + 10
             }
         }
     }

@@ -14,6 +14,11 @@
                         <label width="1" height="40" alignment="left" textAlignment="center" id="tm6-2Z-BAL"/>
                         <label width="1" height="40" alignment="left" textAlignment="center" id="518-af-KGj"/>
                         <label width="1" alignment="left" textAlignment="center" id="fVg-fN-0Lm"/>
+                        <button width="1" alignment="left" hidden="YES" title="POWER UP +TIME" id="YCd-Pw-sBi">
+                            <connections>
+                                <action selector="powerUpPlusTapped" destination="AgC-eL-Hgc" id="LgM-Ro-ZlX"/>
+                            </connections>
+                        </button>
                         <group width="0.0" alignment="center" id="MFT-NE-1bF">
                             <items>
                                 <button width="65" alignment="left" title="Left" id="Gbc-7F-5tH">
@@ -38,6 +43,7 @@
                         <outlet property="catMovement" destination="fVg-fN-0Lm" id="aWA-6y-rJL"/>
                         <outlet property="currentGameTime" destination="tm6-2Z-BAL" id="mMt-xJ-bwW"/>
                         <outlet property="points" destination="518-af-KGj" id="nwV-ee-E5B"/>
+                        <outlet property="powerUpPlusTimeBtn" destination="YCd-Pw-sBi" id="QiX-U0-xig"/>
                         <outlet property="startGameBtn" destination="tp9-bC-xQ4" id="CgG-Xu-uTu"/>
                     </connections>
                 </controller>
